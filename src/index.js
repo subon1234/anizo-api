@@ -15,6 +15,7 @@ const lyricsRoute = require("./routes/lyrics");
 const playlistRoute = require("./routes/playlist");
 const homeRoute = require("./routes/home");
 const trendingRoute = require("./routes/trending");
+const recommendationRoute = require("./routes/recommendation");
 
 // App Middleware
 app.use(cors());
@@ -28,6 +29,7 @@ app.use("/lyrics", lyricsRoute);
 app.use("/playlist", playlistRoute);
 app.use("/home", homeRoute);
 app.use("/trending", trendingRoute);
+app.use("/recommendations", recommendationRoute);
 
 // Root Endpoint
 app.get("/", (req, res) => {

@@ -1,8 +1,22 @@
 const express = require("express");
 const router = express.Router();
 
-const { playlist } = require("../controllers/playlistController");
+const {
+  getPlaylists,
+  create,
+  add,
+  remove,
+  removePlaylist
+} = require("../controllers/playlistController");
 
-router.get("/", playlist);
+router.get("/", getPlaylists);
+
+router.post("/", create);
+
+router.post("/:id/song", add);
+
+router.delete("/:id/song/:videoId", remove);
+
+router.delete("/:id", removePlaylist);
 
 module.exports = router;

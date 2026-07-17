@@ -13,6 +13,7 @@ const playlistRoute = require("./routes/playlist");
 const homeRoute = require("./routes/home");
 const trendingRoute = require("./routes/trending");
 const recommendationRoute = require("./routes/recommendation");
+const artistRoute = require("./routes/artist");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/artists", artistRoute);
 
 app.use(logger);
 

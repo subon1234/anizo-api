@@ -1,30 +1,19 @@
-const ytdlp = require("yt-dlp-exec");
+const { getSong } = require("../services/playService");
 const { getLyrics } = require("../services/lyricsService");
+const { validateVideoId } = require("../utils/validator");
+const { success, error } = require("../utils/response");
 
 async function play(req, res) {
   try {
     const id = req.query.id;
 
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Video id is required"
-      });
+    const validation = validateVideoId(id);
+
+    if (!validation.valid) {
+      return error(res, validation.message, 400);
     }
 
-    const info = await ytdlp(
-      `https://www.youtube.com/watch?v=${id}`,
-      {
-        dumpSingleJson: true,
-        noWarnings: true,
-        noCheckCertificates: true,
-        preferFreeFormats: true
-      }
-    );
-
-    const audio = (info.formats || []).find(
-      f => f.acodec !== "none" && f.vcodec === "none"
-    );
+    const song = await getSong(id);
 
     let lyrics = {
       synced: null,
@@ -32,36 +21,33 @@ async function play(req, res) {
     };
 
     try {
-      const data = await getLyrics(
-        info.title,
-        info.uploader
+      const lyricData = await getLyrics(
+        song.title,
+        song.artist
       );
 
       lyrics = {
-        synced: data.syncedLyrics,
-        plain: data.plainLyrics
+        synced: lyricData.syncedLyrics || null,
+        plain: lyricData.plainLyrics || null
       };
     } catch (e) {
-      // Lyrics not found
+      console.log("Lyrics not found");
     }
 
-    res.json({
-      success: true,
-      videoId: id,
-      title: info.title,
-      author: info.uploader,
-      duration: info.duration,
-      thumbnail: info.thumbnail,
-      streamUrl: audio ? audio.url : null,
-      lyrics
-    });
+    return success(
+      res,
+      {
+        ...song,
+        lyrics
+      },
+      "Song loaded successfully"
+    );
 
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
+    return error(res, err.message, 500);
   }
 }
 
-module.exports = { play };
+module.exports = {
+  play
+};

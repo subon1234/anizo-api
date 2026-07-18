@@ -1,23 +1,58 @@
 const cache = require("../cache/memoryCache");
 const { searchSongs } = require("./searchService");
 
-async function getRecommendations(query = "Top Music") {
-  const cacheKey = `recommendations:${query}`;
+const DEFAULT_QUERIES = [
+  "Top Music",
+  "Pop Hits",
+  "Hindi Hits",
+  "English Hits"
+];
+
+function shuffle(array) {
+  const arr = [...array];
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
+}
+
+async function getRecommendations(query = null) {
+  const cacheKey = `recommendations:${query || "default"}`;
 
   const cached = cache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const songs = await searchSongs(query);
+  try {
+    const queries = query ? [query] : DEFAULT_QUERIES;
 
-  const recommendations = songs
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 15);
+    const results = await Promise.all(
+      queries.map(q => searchSongs(q))
+    );
 
-  cache.set(cacheKey, recommendations, 600);
+    const map = new Map();
 
-  return recommendations;
+    results.flat().forEach(song => {
+      if (!map.has(song.videoId)) {
+        map.set(song.videoId, song);
+      }
+    });
+
+    const recommendations = shuffle(
+      Array.from(map.values())
+    ).slice(0, 20);
+
+    cache.set(cacheKey, recommendations, 600);
+
+    return recommendations;
+  } catch (err) {
+    console.error("Recommendation Error:", err);
+    return [];
+  }
 }
 
 async function getRelatedSongs(title, artist) {
@@ -30,13 +65,20 @@ async function getRelatedSongs(title, artist) {
     return cached;
   }
 
-  const songs = await searchSongs(query);
+  try {
+    const songs = await searchSongs(query);
 
-  const related = songs.slice(0, 10);
+    const related = songs
+      .filter(song => song.title !== title)
+      .slice(0, 10);
 
-  cache.set(cacheKey, related, 600);
+    cache.set(cacheKey, related, 600);
 
-  return related;
+    return related;
+  } catch (err) {
+    console.error("Related Songs Error:", err);
+    return [];
+  }
 }
 
 module.exports = {

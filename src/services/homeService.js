@@ -2,35 +2,57 @@ const { getTrendingSongs } = require("./trendingService");
 const { getRecommendations } = require("./recommendationService");
 
 async function getHomeData() {
-  const trending = await getTrendingSongs();
-  const recommended = await getRecommendations();
+  try {
+    const [trending, recommended] = await Promise.all([
+      getTrendingSongs(),
+      getRecommendations()
+    ]);
 
-  return {
-    banner: trending.slice(0, 5),
+    const safeTrending = trending || [];
+    const safeRecommended = recommended || [];
 
-    sections: [
-      {
-        id: "trending",
-        title: "Trending Now",
-        items: trending
-      },
-      {
-        id: "recommended",
-        title: "Recommended For You",
-        items: recommended
-      },
-      {
-        id: "quick_picks",
-        title: "Quick Picks",
-        items: recommended.slice(0, 8)
-      },
-      {
-        id: "new_releases",
-        title: "New Releases",
-        items: trending.slice(5, 15)
-      }
-    ]
-  };
+    return {
+      success: true,
+
+      banner: safeTrending.slice(0, 5),
+
+      sections: [
+        {
+          id: "trending",
+          title: "🔥 Trending Now",
+          items: safeTrending
+        },
+        {
+          id: "recommended",
+          title: "🎧 Made For You",
+          items: safeRecommended
+        },
+        {
+          id: "quick_picks",
+          title: "⚡ Quick Picks",
+          items: safeRecommended.slice(0, 8)
+        },
+        {
+          id: "new_releases",
+          title: "🆕 New Releases",
+          items: safeTrending.slice(5, 15)
+        },
+        {
+          id: "continue_listening",
+          title: "▶ Continue Listening",
+          items: []
+        }
+      ]
+    };
+  } catch (err) {
+    console.error("Home Service Error:", err);
+
+    return {
+      success: false,
+      banner: [],
+      sections: []
+    };
+  }
 }
 
 module.exports = {
